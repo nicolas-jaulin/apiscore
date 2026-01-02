@@ -100,11 +100,23 @@ app.get('/api/matches', (req, res) => {
 
   console.log('🔍 Requête reçue sur /api/matches depuis:', req.ip);
 
-  // On écrit la requête SQL simple
+  // On écrit la requête SQL avec mapping des colonnes
 
-  const query = 'SELECT * FROM `Match` ORDER BY match_date ASC';
+  const query = `
+    SELECT
+      id,
+      match_date,
+      equipe_int as team1_name,
+      equipe_ext as team2_name,
+      score_int as score_team1,
+      score_ext as score_team2,
+      status,
+      notes
+    FROM \`Match\`
+    ORDER BY match_date ASC
+  `;
 
-  console.log('📝 Exécution de la requête SQL:', query);
+  console.log('📝 Exécution de la requête SQL avec mapping des colonnes');
 
   // On l'exécute sur la connexion
 
@@ -120,7 +132,7 @@ app.get('/api/matches', (req, res) => {
 
     } else {
 
-      console.log(`✅ ${results.length} matchs trouvés`);
+      console.log(`✅ ${results.length} matchs trouvés et mappés`);
 
       if (results.length === 0) {
 
@@ -128,7 +140,17 @@ app.get('/api/matches', (req, res) => {
 
       } else {
 
-        console.log('📊 Premier match:', JSON.stringify(results[0], null, 2));
+        console.log('📊 Premier match mappé:', {
+
+          date: results[0].match_date,
+
+          team1: results[0].team1_name,
+
+          team2: results[0].team2_name,
+
+          score: `${results[0].score_team1} - ${results[0].score_team2}`
+
+        });
 
       }
 
