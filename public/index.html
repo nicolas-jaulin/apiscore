@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Score - Matchs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .match-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .match-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .match-date {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .match-date::before {
+            content: "📅";
+            margin-right: 8px;
+        }
+
+        .teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .team {
+            text-align: center;
+            flex: 1;
+        }
+
+        .team-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .score {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4facfe;
+            margin: 0 20px;
+        }
+
+        .vs {
+            font-size: 1.2em;
+            color: #999;
+            font-weight: bold;
+        }
+
+        .match-status {
+            text-align: center;
+            margin-top: 15px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-finished {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-upcoming {
+            background: #FF9800;
+            color: white;
+        }
+
+        .status-live {
+            background: #f44336;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #f44336;
+            font-size: 1.2em;
+        }
+
+        .refresh-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .matches-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .teams {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .score {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 API Score</h1>
+            <p>Découvrez tous les matchs en direct</p>
+        </div>
+
+        <div class="content">
+            <button class="refresh-btn" onclick="loadMatches()">Actualiser les matchs</button>
+
+            <div id="matches-container">
+                <div class="loading">Chargement des matchs...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('Page loaded');
+
+        async function loadMatches() {
+            console.log('Loading matches...');
+            const container = document.getElementById('matches-container');
+            container.innerHTML = '<div class="loading">Chargement des matchs...</div>';
+
+            try {
+                console.log('Fetching from /api/matches');
+                const response = await fetch('/api/matches');
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Erreur HTTP: ' + response.status);
+                }
+
+                const matches = await response.json();
+                console.log('Matches received:', matches);
+                displayMatches(matches);
+            } catch (error) {
+                console.error('Error:', error);
+                container.innerHTML = '<div class="error">Erreur : ' + error.message + '</div>';
+            }
+        }
+
+        function displayMatches(matches) {
+            const container = document.getElementById('matches-container');
+
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="loading">Aucun match trouvé</div>';
+                return;
+            }
+
+            const matchesHtml = matches.map(match => {
+                const matchDate = new Date(match.match_date).toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                let statusClass = 'status-upcoming';
+                let statusText = 'À venir';
+
+                const now = new Date();
+                const matchTime = new Date(match.match_date);
+
+                if (match.score_team1 !== null && match.score_team2 !== null) {
+                    statusClass = 'status-finished';
+                    statusText = 'Terminé';
+                } else if (matchTime <= now) {
+                    statusClass = 'status-live';
+                    statusText = 'En cours';
+                }
+
+                return `
+                    <div class="match-card">
+                        <div class="match-date">${matchDate}</div>
+                        <div class="teams">
+                            <div class="team">
+                                <div class="team-name">${match.team1_name}</div>
+                            </div>
+                            <div class="score">
+                                ${match.score_team1 !== null ? match.score_team1 : '-'} - ${match.score_team2 !== null ? match.score_team2 : '-'}
+                            </div>
+                            <div class="team">
+                                <div class="team-name">${match.team2_name}</div>
+                            </div>
+                        </div>
+                        <div class="match-status ${statusClass}">${statusText}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="matches-grid">${matchesHtml}</div>`;
+        }
+
+        // Charger les matchs au démarrage
+        loadMatches();
+
+        // Actualiser automatiquement toutes les 30 secondes
+        setInterval(loadMatches, 30000);
+    </script>
+</body>
+</html>

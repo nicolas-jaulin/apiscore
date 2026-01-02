@@ -16,11 +16,35 @@ const app = express();
 
 app.use(cors());
 
+// On sert les fichiers statiques du dossier public (HTML, CSS, JS)
+
+app.use(express.static('public'));
+
+// Route pour servir la page d'accueil
+
+app.get('/', (req, res) => {
+
+  res.sendFile(__dirname + '/public/index.html');
+
+});
+
 // --- CONFIGURATION DE LA BASE DE DONNÉES ---
 
 // On récupère les infos de connexion depuis les variables d'environnement (le fichier .env)
 
 // C'est sécurisé : le mot de passe n'est pas écrit ici !
+
+console.log('🔧 Configuration DB:');
+
+console.log('  Host:', process.env.DB_HOST);
+
+console.log('  Port:', process.env.DB_PORT);
+
+console.log('  User:', process.env.DB_USER);
+
+console.log('  Database:', process.env.DB_NAME);
+
+console.log('  Password défini:', !!process.env.DB_PASSWORD);
 
 const connection = mysql.createConnection({
 
@@ -43,6 +67,8 @@ connection.connect((err) => {
   if (err) {
 
     console.error('Erreur de connexion à la base de données :', err);
+
+    console.error('Détails de l\'erreur:', err.code, err.errno, err.sqlState);
 
   } else {
 
@@ -72,9 +98,13 @@ app.get('/api/healthz', (req, res) => {
 
 app.get('/api/matches', (req, res) => {
 
+  console.log('🔍 Requête reçue sur /api/matches depuis:', req.ip);
+
   // On écrit la requête SQL simple
 
   const query = 'SELECT * FROM `Match` ORDER BY match_date ASC';
+
+  console.log('📝 Exécution de la requête SQL:', query);
 
   // On l'exécute sur la connexion
 
@@ -84,11 +114,23 @@ app.get('/api/matches', (req, res) => {
 
       // S'il y a une erreur technique (ex: table inexistante), on renvoie une erreur 500
 
-      console.error(err);
+      console.error('Erreur SQL:', err);
 
       res.status(500).json({ error: 'Erreur lors de la récupération des matchs' });
 
     } else {
+
+      console.log(`✅ ${results.length} matchs trouvés`);
+
+      if (results.length === 0) {
+
+        console.log('⚠️  Aucun match dans la base de données');
+
+      } else {
+
+        console.log('📊 Premier match:', JSON.stringify(results[0], null, 2));
+
+      }
 
       // Sinon, on renvoie les résultats en format JSON (texte structuré)
 
@@ -108,8 +150,14 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
 
-  console.log(`Le serveur API est lancé !`);
+  console.log(`🚀 Serveur API lancé sur le port ${PORT}`);
 
-  console.log(`Testez le ici : http://localhost:${PORT}/api/healthz`);
+  console.log(`📍 Environnement: ${process.env.NODE_ENV || 'development'}`);
+
+  console.log(`🔗 URL locale: http://localhost:${PORT}`);
+
+  console.log(`🏥 Health check: http://localhost:${PORT}/api/healthz`);
+
+  console.log(`⚽ Matches API: http://localhost:${PORT}/api/matches`);
 
 });
