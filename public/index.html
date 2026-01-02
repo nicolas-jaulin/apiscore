@@ -245,8 +245,9 @@
             }
 
             const matchesHtml = matches.map(match => {
-                // La date est déjà en UTC dans la DB, affichage automatique en heure locale
-                const matchDate = new Date(match.match_date).toLocaleDateString('fr-FR', {
+                // Traiter explicitement comme UTC et convertir en heure locale
+                const utcDate = new Date(match.match_date + (match.match_date.includes('Z') ? '' : 'Z'));
+                const matchDate = utcDate.toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -259,7 +260,7 @@
                 let statusText = 'À venir';
 
                 const now = new Date();
-                const matchTime = new Date(match.match_date);
+                const matchTime = new Date(match.match_date + (match.match_date.includes('Z') ? '' : 'Z'));
 
                 if (match.score_team1 !== null && match.score_team2 !== null) {
                     statusClass = 'status-finished';
